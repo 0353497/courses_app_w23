@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:courses_app/models/course.dart';
+import 'package:courses_app/services/http_service.dart';
 import 'package:get/get_utils/src/extensions/num_extensions.dart';
 import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
@@ -11,11 +13,62 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  DateTime selectedDateTime = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-    DateTime.now().day - DateTime.now().weekday + 1,
-  );
+  late DateTime selectedDateTime;
+  late Future<List<Course>> coursesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedDateTime = _weekStart(DateTime(2025, 5));
+    coursesFuture = _loadCourses();
+  }
+
+  DateTime _weekStart(DateTime date) {
+    final start = DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(Duration(days: date.weekday - 1));
+    return DateTime(start.year, start.month, start.day);
+  }
+
+  Future<List<Course>> _loadCourses() {
+    final start = _weekStart(selectedDateTime);
+    final end = start.add(const Duration(days: 7));
+    return HttpService.getCourses(start, end);
+  }
+
+  void _changeWeek(int offsetDays) {
+    setState(() {
+      selectedDateTime = selectedDateTime.add(Duration(days: offsetDays));
+      coursesFuture = _loadCourses();
+    });
+  }
+
+  List<Course> _coursesForDay(List<Course> courses, DateTime day) {
+    final normalizedDay = DateTime(day.year, day.month, day.day);
+    return courses.where((course) {
+      final courseDay = DateTime(
+        course.start.year,
+        course.start.month,
+        course.start.day,
+      );
+      return courseDay == normalizedDay;
+    }).toList()..sort((left, right) => left.start.compareTo(right.start));
+  }
+
+  Widget _buildCourseTile(Course course) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Get.theme.primaryColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,11 +102,7 @@ class _MainPageState extends State<MainPage> {
                           children: [
                             IconButton(
                               onPressed: () {
-                                setState(() {
-                                  selectedDateTime = selectedDateTime.subtract(
-                                    7.days,
-                                  );
-                                });
+                                _changeWeek(-7);
                               },
                               icon: Icon(Icons.arrow_back_ios),
                             ),
@@ -62,11 +111,7 @@ class _MainPageState extends State<MainPage> {
                             ),
                             IconButton(
                               onPressed: () {
-                                setState(() {
-                                  selectedDateTime = selectedDateTime.add(
-                                    7.days,
-                                  );
-                                });
+                                _changeWeek(7);
                               },
                               icon: Icon(Icons.arrow_forward_ios),
                             ),
@@ -75,58 +120,77 @@ class _MainPageState extends State<MainPage> {
                       ],
                     ),
                     Expanded(
-                      child: Row(
-                        children: [
-                          for (int i = 0; i < 7; i++)
-                            Builder(
-                              builder: (context) {
-                                final DateTime ownDate = selectedDateTime.add(
-                                  i.days,
-                                );
-                                return Expanded(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      border: BoxBorder.all(
-                                        color: Get.theme.primaryColor,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(DateFormat("E").format(ownDate)),
-                                        Expanded(
-                                          child: ListView.builder(
-                                            itemCount: 2,
-                                            itemBuilder: (context, index) {
-                                              return Column(
-                                                children: [
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          8.0,
-                                                        ),
-                                                    child: Container(
-                                                      width: double.maxFinite,
-                                                      height: 50,
-                                                      color: Get
-                                                          .theme
-                                                          .primaryColor,
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            },
+                      child: FutureBuilder<List<Course>>(
+                        future: coursesFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+
+                          if (snapshot.hasError) {
+                            return const Center(child: Text('error'));
+                          }
+
+                          final courses = snapshot.data ?? const <Course>[];
+
+                          return Row(
+                            children: [
+                              for (int i = 0; i < 7; i++)
+                                Builder(
+                                  builder: (context) {
+                                    final DateTime ownDate = selectedDateTime
+                                        .add(i.days);
+                                    final dayCourses = _coursesForDay(
+                                      courses,
+                                      ownDate,
+                                    );
+
+                                    return Expanded(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Get.theme.primaryColor,
+                                            width: 2,
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                        ],
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.all(
+                                                8.0,
+                                              ),
+                                              child: Text(
+                                                DateFormat('E').format(ownDate),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: ListView.builder(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                    ),
+                                                itemCount: dayCourses.length,
+                                                itemBuilder: (context, index) {
+                                                  return _buildCourseTile(
+                                                    dayCourses[index],
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ],
