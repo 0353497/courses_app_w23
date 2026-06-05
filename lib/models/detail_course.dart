@@ -3,8 +3,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'detail_course.g.dart';
 
-enum CourseStatus { booked, onWaitingList, notBooked }
-
 @JsonSerializable()
 class DetailCourse {
   final int id;
@@ -38,30 +36,4 @@ class DetailCourse {
   factory DetailCourse.fromJson(Map<String, dynamic> json) =>
       _$DetailCourseFromJson(json);
   Map<String, dynamic> toJson() => _$DetailCourseToJson(this);
-
-  bool get isInFuture => start.isAfter(DateTime.now());
-  bool get isFullyBooked => bookings.length >= maxParticipants;
-
-  List<Booking> get confirmedBookings {
-    final sorted = _sortedBookings;
-    return sorted.take(maxParticipants).toList();
-  }
-
-  List<Booking> get waitingList {
-    final sorted = _sortedBookings;
-    return sorted.skip(maxParticipants).toList();
-  }
-
-  List<Booking> get _sortedBookings =>
-      [...bookings]..sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
-  CourseStatus statusForUser(int userId) {
-    if (confirmedBookings.any((b) => b.userId == userId)) {
-      return CourseStatus.booked;
-    }
-    if (waitingList.any((b) => b.userId == userId)) {
-      return CourseStatus.onWaitingList;
-    }
-    return CourseStatus.notBooked;
-  }
 }

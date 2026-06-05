@@ -71,7 +71,7 @@ class _MainPageState extends State<MainPage> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Get.theme.primaryColor,
+          color: course.getCourseColor,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
