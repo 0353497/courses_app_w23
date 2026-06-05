@@ -69,11 +69,12 @@ class _LoginPageState extends State<LoginPage> {
                             nameController.value.text,
                             passwordController.value.text,
                           );
-                          if (data["succes"]) {
+                          if (data["success"]) {
                             final UserProvider provider =
                                 Get.find<UserProvider>();
                             provider.token.value = data["result"]["token"];
                             provider.username.value = nameController.value.text;
+                            Get.to(() => MainPage());
                           }
                         }
                       : null,
