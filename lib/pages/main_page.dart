@@ -1,3 +1,4 @@
+import 'package:courses_app/models/detail_course.dart';
 import 'package:flutter/material.dart';
 import 'package:courses_app/models/course.dart';
 import 'package:courses_app/services/http_service.dart';
@@ -15,11 +16,12 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   late DateTime selectedDateTime;
   late Future<List<Course>> coursesFuture;
+  Course? selectedCourse;
 
   @override
   void initState() {
     super.initState();
-    selectedDateTime = _weekStart(DateTime(2025, 5));
+    selectedDateTime = _weekStart(DateTime(2025, 5, 26));
     coursesFuture = _loadCourses();
   }
 
@@ -58,13 +60,20 @@ class _MainPageState extends State<MainPage> {
   }
 
   Widget _buildCourseTile(Course course) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Get.theme.primaryColor,
-        borderRadius: BorderRadius.circular(8),
+    return InkWell(
+      onTap: () {
+        setState(() {
+          selectedCourse = course;
+        });
+      },
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Get.theme.primaryColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }
@@ -90,35 +99,22 @@ class _MainPageState extends State<MainPage> {
           child: LayoutBuilder(
             builder: (context, contraints) {
               if (contraints.maxWidth > 500) {
-                return Row(children: [calendar(), selectedCoursWidget()]);
+                return Row(
+                  children: [
+                    calendar(),
+                    SelectedCourseWidget(course: selectedCourse),
+                  ],
+                );
               }
-              return Column(children: [calendar(), selectedCoursWidget()]);
+              return Column(
+                children: [
+                  calendar(),
+                  SelectedCourseWidget(course: selectedCourse),
+                ],
+              );
             },
           ),
         ),
-      ),
-    );
-  }
-
-  Expanded selectedCoursWidget() {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Title"),
-              Image.network(
-                "",
-                errorBuilder: (context, error, stackTrace) {
-                  return Center(child: Icon(Icons.error));
-                },
-              ),
-            ],
-          ),
-          Text("Description"),
-        ],
       ),
     );
   }
@@ -219,6 +215,63 @@ class _MainPageState extends State<MainPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class SelectedCourseWidget extends StatelessWidget {
+  const SelectedCourseWidget({super.key, this.course});
+  final Course? course;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: course == null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Title"),
+                    Image.network(
+                      "",
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(child: Icon(Icons.error));
+                      },
+                    ),
+                  ],
+                ),
+                Text("Description"),
+              ],
+            )
+          : FutureBuilder(
+              future: HttpService.getCourseById(course!.id),
+              builder: (context, asyncSnapshot) {
+                if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                final DetailCourse detailCourse = asyncSnapshot.data!;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(detailCourse.title),
+                        Image.network(
+                          detailCourse.thumbnail,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(child: Icon(Icons.error));
+                          },
+                        ),
+                      ],
+                    ),
+                    Text(detailCourse.description),
+                  ],
+                );
+              },
+            ),
     );
   }
 }
