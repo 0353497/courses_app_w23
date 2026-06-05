@@ -1,7 +1,8 @@
 import 'package:courses_app/pages/main_page.dart';
+import 'package:courses_app/providers/user_provider.dart';
+import 'package:courses_app/services/http_service.dart';
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
-import 'package:get/utils.dart';
+import 'package:get/get.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -63,8 +64,17 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 ElevatedButton(
                   onPressed: enableSignin
-                      ? () {
-                          Get.to(() => MainPage());
+                      ? () async {
+                          final data = await HttpService.login(
+                            nameController.value.text,
+                            passwordController.value.text,
+                          );
+                          if (data["succes"]) {
+                            final UserProvider provider =
+                                Get.find<UserProvider>();
+                            provider.token.value = data["result"]["token"];
+                            provider.username.value = nameController.value.text;
+                          }
                         }
                       : null,
                   child: Text("Sign in"),
@@ -73,6 +83,14 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            nameController.value = TextEditingValue(text: "victoria");
+            passwordController.value = TextEditingValue(text: "2cquf");
+          });
+        },
       ),
     );
   }
