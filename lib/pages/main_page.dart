@@ -294,8 +294,23 @@ class SelectedCourseWidget extends StatelessWidget {
                     ),
                     Text(detailCourse.description),
                     Text("max: ${detailCourse.maxParticipants}"),
+                    if (course!.statusForUser == CourseStatus.onWaitingList)
+                      Text("Waiting position: ${course?.positionWaitingList}"),
                     Text("Status: ${course!.statusForUser}"),
-                    ElevatedButton(onPressed: () {}, child: Text("Book")),
+                    if (course!.statusForUser == CourseStatus.notBooked)
+                      ElevatedButton(
+                        onPressed: () {
+                          HttpService.bookCourse(detailCourse.id);
+                        },
+                        child: Text("Book"),
+                      ),
+                    if (course!.statusForUser != CourseStatus.notBooked)
+                      ElevatedButton(
+                        onPressed: () async {
+                          HttpService.removeBooking(detailCourse.id);
+                        },
+                        child: Text("remove booking"),
+                      ),
                   ],
                 );
               },

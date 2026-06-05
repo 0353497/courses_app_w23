@@ -50,6 +50,14 @@ class Course {
     return sorted.skip(maxParticipants).toList();
   }
 
+  int? get positionWaitingList {
+    final int userId = Get.find<UserProvider>().userId.value;
+
+    final int position = waitingList.indexWhere((e) => e.userId == userId) + 1;
+    if (position == -1) return null;
+    return position;
+  }
+
   List<Booking> get _sortedBookings =>
       [...bookings]..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
