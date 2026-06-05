@@ -16,6 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  String errorMessage = "";
 
   @override
   void initState() {
@@ -74,12 +75,28 @@ class _LoginPageState extends State<LoginPage> {
                                 Get.find<UserProvider>();
                             provider.token.value = data["result"]["token"];
                             provider.username.value = nameController.value.text;
+                            final sessionData = await HttpService.getSession();
+                            provider.userId.value =
+                                sessionData["result"]["userId"];
                             Get.to(() => MainPage());
+                          } else {
+                            setState(() {
+                              errorMessage = data["message"];
+                            });
                           }
                         }
                       : null,
                   child: Text("Sign in"),
                 ),
+                if (errorMessage.isNotEmpty)
+                  Text(
+                    errorMessage,
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
               ],
             ),
           ),

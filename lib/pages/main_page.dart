@@ -293,7 +293,9 @@ class SelectedCourseWidget extends StatelessWidget {
                       ],
                     ),
                     Text(detailCourse.description),
-                    Text("${detailCourse.maxParticipants}"),
+                    Text("max: ${detailCourse.maxParticipants}"),
+                    Text("Status: ${course!.statusForUser}"),
+                    ElevatedButton(onPressed: () {}, child: Text("Book")),
                   ],
                 );
               },

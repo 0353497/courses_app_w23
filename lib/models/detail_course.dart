@@ -1,4 +1,7 @@
 import 'package:courses_app/models/booking.dart';
+import 'package:courses_app/models/course.dart';
+import 'package:courses_app/providers/user_provider.dart';
+import 'package:get/get.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'detail_course.g.dart';
@@ -36,4 +39,40 @@ class DetailCourse {
   factory DetailCourse.fromJson(Map<String, dynamic> json) =>
       _$DetailCourseFromJson(json);
   Map<String, dynamic> toJson() => _$DetailCourseToJson(this);
+
+  DateTime get end => start.add(duration);
+  bool get isInFuture => start.isAfter(DateTime.now());
+  bool get isFullyBooked => bookings.length >= maxParticipants;
+
+  List<Booking> get confirmedBookings {
+    final sorted = _sortedBookings;
+    return sorted.take(maxParticipants).toList();
+  }
+
+  List<Booking> get waitingList {
+    final sorted = _sortedBookings;
+    return sorted.skip(maxParticipants).toList();
+  }
+
+  List<Booking> get _sortedBookings =>
+      [...bookings]..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+  CourseStatus get statusForUser {
+    final int userId = Get.find<UserProvider>().userId.value;
+    if (confirmedBookings.any((b) => b.userId == userId)) {
+      return CourseStatus.booked;
+    }
+    if (waitingList.any((b) => b.userId == userId)) {
+      return CourseStatus.onWaitingList;
+    }
+    return CourseStatus.notBooked;
+  }
+
+  int? get waitingListPositionForUser {
+    final int userId = Get.find<UserProvider>().userId.value;
+    final index = waitingList.indexWhere((b) => b.userId == userId);
+    if (index == -1) return null;
+
+    return index + 1;
+  }
 }

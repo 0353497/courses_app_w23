@@ -54,7 +54,7 @@ class Course {
       [...bookings]..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
   CourseStatus get statusForUser {
-    final int userId = Get.find<UserProvider>().userId;
+    final int userId = Get.find<UserProvider>().userId.value;
     if (confirmedBookings.any((b) => b.userId == userId)) {
       return CourseStatus.booked;
     }
@@ -64,8 +64,15 @@ class Course {
     return CourseStatus.notBooked;
   }
 
+  int? get waitingListPositionForUser {
+    final int userId = Get.find<UserProvider>().userId.value;
+    final index = waitingList.indexWhere((b) => b.userId == userId);
+    if (index == -1) return null;
+
+    return index + 1;
+  }
+
   Color get getCourseColor {
-    bool isInFuture = DateTime(2025, 6).isAfter(start);
     if (isInFuture) {
       if (statusForUser == CourseStatus.booked) return Colors.green;
       if (statusForUser == CourseStatus.onWaitingList) return Colors.yellow;
@@ -80,8 +87,6 @@ class Course {
 }
 
 enum CourseStatus { booked, onWaitingList, notBooked }
-
-
 
 // {
 //       "id": 127,
