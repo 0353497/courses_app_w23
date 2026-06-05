@@ -13,6 +13,7 @@ class Course {
   final Duration duration;
   final int maxParticipants;
   final List<Booking> bookings;
+  DateTime get end => start.add(duration);
 
   Course({
     required this.id,

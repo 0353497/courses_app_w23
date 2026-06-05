@@ -27,4 +27,13 @@ class HttpService {
     final data = jsonDecode(res.body);
     return DetailCourse.fromJson(data["result"]);
   }
+
+  static Future<bool> login(String username, String password) async {
+    final res = await http.post(
+      Uri.parse("http://10.0.2.2:8080/api/auth/login"),
+      body: {"username": username, "password": password},
+    );
+    final data = jsonDecode(res.body);
+    return data["succes"];
+  }
 }

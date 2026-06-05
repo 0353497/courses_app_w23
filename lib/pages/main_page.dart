@@ -74,6 +74,16 @@ class _MainPageState extends State<MainPage> {
           color: Get.theme.primaryColor,
           borderRadius: BorderRadius.circular(8),
         ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 8,
+          children: [
+            Text(course.title),
+            Text(
+              "${DateFormat("HH:mm").format(course.start)}-${DateFormat("HH:mm").format(course.end)}",
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -121,99 +131,110 @@ class _MainPageState extends State<MainPage> {
 
   Expanded calendar() {
     return Expanded(
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(DateFormat("yyyy/M/d").format(selectedDateTime)),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: 12,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      _changeWeek(-7);
-                    },
-                    icon: Icon(Icons.arrow_back_ios),
-                  ),
-                  Text(
-                    "W${(int.parse(DateFormat("D").format(selectedDateTime)) / 7).toInt()}",
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      _changeWeek(7);
-                    },
-                    icon: Icon(Icons.arrow_forward_ios),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Expanded(
-            child: FutureBuilder<List<Course>>(
-              future: coursesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return const Center(child: Text('error'));
-                }
-
-                final courses = snapshot.data ?? const <Course>[];
-
-                return Row(
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          if (details.delta.dx > 2) {
+            _changeWeek(7);
+          } else if (details.delta.dx < -2) {
+            _changeWeek(-7);
+          }
+        },
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(DateFormat("yyyy/M/d").format(selectedDateTime)),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 12,
                   children: [
-                    for (int i = 0; i < 7; i++)
-                      Builder(
-                        builder: (context) {
-                          final DateTime ownDate = selectedDateTime.add(i.days);
-                          final dayCourses = _coursesForDay(courses, ownDate);
+                    IconButton(
+                      onPressed: () {
+                        _changeWeek(-7);
+                      },
+                      icon: Icon(Icons.arrow_back_ios),
+                    ),
+                    Text(
+                      "W${(int.parse(DateFormat("D").format(selectedDateTime)) / 7).toInt()}",
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        _changeWeek(7);
+                      },
+                      icon: Icon(Icons.arrow_forward_ios),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Expanded(
+              child: FutureBuilder<List<Course>>(
+                future: coursesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                          return Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Get.theme.primaryColor,
-                                  width: 2,
+                  if (snapshot.hasError) {
+                    return const Center(child: Text('error'));
+                  }
+
+                  final courses = snapshot.data ?? const <Course>[];
+
+                  return Row(
+                    children: [
+                      for (int i = 0; i < 7; i++)
+                        Builder(
+                          builder: (context) {
+                            final DateTime ownDate = selectedDateTime.add(
+                              i.days,
+                            );
+                            final dayCourses = _coursesForDay(courses, ownDate);
+
+                            return Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Get.theme.primaryColor,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        DateFormat('E').format(ownDate),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: ListView.builder(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        itemCount: dayCourses.length,
+                                        itemBuilder: (context, index) {
+                                          return _buildCourseTile(
+                                            dayCourses[index],
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      DateFormat('E').format(ownDate),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: ListView.builder(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                      ),
-                                      itemCount: dayCourses.length,
-                                      itemBuilder: (context, index) {
-                                        return _buildCourseTile(
-                                          dayCourses[index],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                  ],
-                );
-              },
+                            );
+                          },
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -259,15 +280,20 @@ class SelectedCourseWidget extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(detailCourse.title),
-                        Image.network(
-                          detailCourse.thumbnail,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(child: Icon(Icons.error));
-                          },
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: Image.network(
+                            "http://10.0.2.2:8080${detailCourse.thumbnail}",
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(child: Icon(Icons.error));
+                            },
+                          ),
                         ),
                       ],
                     ),
                     Text(detailCourse.description),
+                    Text("${detailCourse.maxParticipants}"),
                   ],
                 );
               },
