@@ -10,3 +10,7 @@ dan moet ik eer een api request doen om in te loggen, hierbij krijg ik een token
 Daarna kan ik weer via de header een api request met id doen om de status te krijgen. 
 
 Dit is een te lang process voor 2 uur tijd met alles er om heen. dus heb ik helaas niet af...
+
+## heb de de huidige tijd op 2025 06 gezet voor de status, ander is alles in het verleden en is lastig testen/nakijken.
+
+## een booking cancelen update niet gelijk, maar dat staat ook niet als vereiste dus je moet zelf refreshen. maar het werkt wel

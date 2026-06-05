@@ -87,10 +87,10 @@ class Course {
       if (statusForUser == CourseStatus.notBooked) return Colors.grey;
     } else {
       if (statusForUser == CourseStatus.booked) {
-        return Colors.green.withAlpha(100);
+        return Colors.green.withAlpha(150);
       }
     }
-    return Colors.grey.withAlpha(100);
+    return Colors.grey.withAlpha(150);
   }
 }
 
