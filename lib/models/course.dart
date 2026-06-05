@@ -65,14 +65,15 @@ class Course {
   }
 
   Color get getCourseColor {
-    bool isInFuture = DateTime.now().isAfter(start);
+    bool isInFuture = DateTime(2025, 6).isAfter(start);
     if (isInFuture) {
       if (statusForUser == CourseStatus.booked) return Colors.green;
       if (statusForUser == CourseStatus.onWaitingList) return Colors.yellow;
       if (statusForUser == CourseStatus.notBooked) return Colors.grey;
     } else {
-      if (statusForUser == CourseStatus.booked)
+      if (statusForUser == CourseStatus.booked) {
         return Colors.green.withAlpha(100);
+      }
     }
     return Colors.grey.withAlpha(100);
   }
